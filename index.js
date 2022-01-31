@@ -1,7 +1,17 @@
 const express = require('express')
+const morgan = require('morgan')
 const app = express()
 
 app.use(express.json())
+app.use(morgan(':method :url :status :res[content-length] - :response-time ms :body'))
+
+morgan.token('body', function (req, res) {
+  if (req.method === 'POST') {
+    return JSON.stringify(req.body)
+  } else {
+    return ' '
+  }
+})
 
 let persons = [
   {
@@ -88,6 +98,12 @@ const generateId = () => {
   const maxId = Math.floor(Math.random() * 1000)
   return maxId
 }
+
+const unknownEndpoint = (request, response) => {
+  response.status(404).send({ error: 'unknown endpoint' })
+}
+
+app.use(unknownEndpoint)
 
 const PORT = 3001
 app.listen(PORT, () => {
