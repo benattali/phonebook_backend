@@ -27,7 +27,12 @@ if (process.argv.length === 3) {
     })
     mongoose.connection.close()
   })
-} else {
+} else if (process.argv.length === 4) {
+  console.log('Please provide a name and number as arguments: node mongo.js <password> <name> <number>')
+  mongoose.connection.close()
+  process.exit(1)
+}
+else {
   const name = process.argv[3]
   const number = process.argv[4]
   const person = new Person({
