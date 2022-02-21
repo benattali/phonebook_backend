@@ -25,18 +25,17 @@ app.get('/api/persons', (request, response) => {
 })
 
 app.get('/api/info', (request, response) => {
-  const phonebook_length = persons.length
-  const todays_date = new Date()
-
-  const res = `
-  <p>Phonebook has info for ${phonebook_length} people</p>
-  <p>${todays_date}</p>
-  `
-  response.send(res)
+  const x = Person.estimatedDocumentCount().then(count => {
+    const todays_date = new Date()
+    const res = `
+    <p>Phonebook has info for ${count} people</p>
+    <p>${todays_date}</p>
+    `
+    response.send(res)
+  })
 })
 
-app.get('/api/persons/:id', (request, response) => {
-  console.log("id ", request.params.id);
+app.get('/api/persons/:id', (request, response, next) => {
   Person.findById(request.params.id)
     .then(person => {
       if (person) {
@@ -45,18 +44,7 @@ app.get('/api/persons/:id', (request, response) => {
         response.status(404).end()
       }
     })
-    .catch(error => {
-      console.log(error)
-      response.status(500).end()
-    })
-  // const id = Number(request.params.id)
-  // const person = persons.find(person => person.id === id)
-
-  // if (person) {
-  //   response.json(person)
-  // } else {
-  //   response.status(404).end()
-  // }
+    .catch(error => next(error))
 })
 
 app.post('/api/persons', (request, response) => {
@@ -100,23 +88,57 @@ app.post('/api/persons', (request, response) => {
 //   response.json(persons)
 // })
 
-app.delete('/api/persons/:id', (request, response) => {
-  const id = Number(request.params.id)
-  persons = persons.filter(person => person.id !== id)
+app.delete('/api/persons/:id', (request, response, next) => {
+  Person.findByIdAndRemove(request.params.id)
+    .then(result => {
+      response.status(204).end()
+    })
+    .catch(error => next(error))
+})
+// app.delete('/api/persons/:id', (request, response) => {
+//   const id = Number(request.params.id)
+//   persons = persons.filter(person => person.id !== id)
 
-  response.status(204).end()
+//   response.status(204).end()
+// })
+
+app.put('/api/persons/:id', (request, response, next) => {
+  const body = request.body
+
+  const person = {
+    name: body.name,
+    number: body.number,
+  }
+
+  Person.findByIdAndUpdate(request.params.id, person, { new: true })
+    .then(updatedPerson => {
+      response.json(updatedPerson)
+    })
+    .catch(error => next(error))
 })
 
-const generateId = () => {
-  const maxId = Math.floor(Math.random() * 1000)
-  return maxId
-}
+// const generateId = () => {
+//   const maxId = Math.floor(Math.random() * 1000)
+//   return maxId
+// }
 
 const unknownEndpoint = (request, response) => {
   response.status(404).send({ error: 'unknown endpoint' })
 }
 
 app.use(unknownEndpoint)
+
+const errorHandler = (error, request, response, next) => {
+  console.error(error.message)
+
+  if (error.name === 'CastError') {
+    return response.status(400).send({ error: 'malformatted id' })
+  }
+
+  next(error)
+}
+
+app.use(errorHandler)
 
 const PORT = process.env.PORT
 app.listen(PORT, () => {
