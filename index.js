@@ -47,47 +47,20 @@ app.get('/api/persons/:id', (request, response, next) => {
     .catch(error => next(error))
 })
 
-app.post('/api/persons', (request, response) => {
+app.post('/api/persons', (request, response, next) => {
   const body = request.body
-
-  if (!body.name || !body.number) {
-    return response.status(400).json({ error: 'name and/or number are missing' })
-  }
 
   const person = new Person({
     name: body.name,
     number: body.number,
   })
 
-  person.save().then(savedPerson => {
-    persons = Person.find({})
-    response.json(persons)
-  })
+  person.save()
+    .then(savedPerson => {
+      response.json(savedPerson)
+    })
+    .catch(error => next(error))
 })
-// app.post('/api/persons', (request, response) => {
-//   const body = request.body
-//   const names = persons.map(person => person.name)
-
-//   if (!body.name || !body.number) {
-//     return response.status(400).json({
-//       error: 'name and/or number are missing'
-//     })
-//   } else if (names.includes(body.name)) {
-//     return response.status(400).json({
-//       error: 'name already exists'
-//     })
-//   }
-
-//   const person = {
-//     id: generateId(),
-//     name: body.name,
-//     number: body.number,
-//   }
-
-//   persons = persons.concat(person)
-
-//   response.json(persons)
-// })
 
 app.delete('/api/persons/:id', (request, response, next) => {
   Person.findByIdAndRemove(request.params.id)
@@ -96,32 +69,24 @@ app.delete('/api/persons/:id', (request, response, next) => {
     })
     .catch(error => next(error))
 })
-// app.delete('/api/persons/:id', (request, response) => {
-//   const id = Number(request.params.id)
-//   persons = persons.filter(person => person.id !== id)
-
-//   response.status(204).end()
-// })
 
 app.put('/api/persons/:id', (request, response, next) => {
-  const body = request.body
+  const { name, number } = request.body
 
   const person = {
-    name: body.name,
-    number: body.number,
+    name,
+    number,
   }
 
-  Person.findByIdAndUpdate(request.params.id, person, { new: true })
+  Person.findByIdAndUpdate(
+    request.params.id,
+    person,
+    { new: true, runValidators: true, context: 'query' })
     .then(updatedPerson => {
       response.json(updatedPerson)
     })
     .catch(error => next(error))
 })
-
-// const generateId = () => {
-//   const maxId = Math.floor(Math.random() * 1000)
-//   return maxId
-// }
 
 const unknownEndpoint = (request, response) => {
   response.status(404).send({ error: 'unknown endpoint' })
@@ -134,6 +99,8 @@ const errorHandler = (error, request, response, next) => {
 
   if (error.name === 'CastError') {
     return response.status(400).send({ error: 'malformatted id' })
+  } else if (error.name === 'ValidationError') {
+    return response.status(400).json({ error: error.message })
   }
 
   next(error)
