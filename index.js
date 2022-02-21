@@ -4,6 +4,7 @@ const morgan = require('morgan')
 const cors = require('cors')
 const app = express()
 const Person = require('./models/person')
+const mongoose = require('mongoose')
 
 app.use(express.static('build'))
 app.use(cors())
@@ -21,17 +22,19 @@ morgan.token('body', function (req, res) {
 app.get('/api/persons', (request, response) => {
   Person.find({}).then(persons => {
     response.json(persons)
+    mongoose.connection.close()
   })
 })
 
 app.get('/api/info', (request, response) => {
-  const x = Person.estimatedDocumentCount().then(count => {
+  Person.estimatedDocumentCount().then(count => {
     const todays_date = new Date()
     const res = `
     <p>Phonebook has info for ${count} people</p>
     <p>${todays_date}</p>
     `
     response.send(res)
+    mongoose.connection.close()
   })
 })
 
@@ -43,6 +46,7 @@ app.get('/api/persons/:id', (request, response, next) => {
       } else {
         response.status(404).end()
       }
+      mongoose.connection.close()
     })
     .catch(error => next(error))
 })
@@ -61,6 +65,7 @@ app.post('/api/persons', (request, response) => {
 
   person.save().then(savedPerson => {
     response.json(Person.find({}))
+    mongoose.connection.close()
   })
 })
 // app.post('/api/persons', (request, response) => {
@@ -92,6 +97,7 @@ app.delete('/api/persons/:id', (request, response, next) => {
   Person.findByIdAndRemove(request.params.id)
     .then(result => {
       response.status(204).end()
+      mongoose.connection.close()
     })
     .catch(error => next(error))
 })
@@ -113,6 +119,7 @@ app.put('/api/persons/:id', (request, response, next) => {
   Person.findByIdAndUpdate(request.params.id, person, { new: true })
     .then(updatedPerson => {
       response.json(updatedPerson)
+      mongoose.connection.close()
     })
     .catch(error => next(error))
 })
