@@ -1,10 +1,13 @@
-const mongoose = require('mongoose')
+const mongoose = require("mongoose")
 
+// eslint-disable-next-line no-undef
 if (process.argv.length < 3) {
-  console.log('Please provide the password as an argument: node mongo.js <password>')
+  console.log("Please provide the password as an argument: node mongo.js <password>")
+  // eslint-disable-next-line no-undef
   process.exit(1)
 }
 
+// eslint-disable-next-line no-undef
 const password = process.argv[2]
 
 const url =
@@ -17,23 +20,28 @@ const personSchema = new mongoose.Schema({
   number: String,
 })
 
-const Person = mongoose.model('Person', personSchema)
+const Person = mongoose.model("Person", personSchema)
 
+// eslint-disable-next-line no-undef
 if (process.argv.length === 3) {
-  console.log("phonebook:");
+  console.log("phonebook:")
   Person.find({}).then(result => {
     result.forEach(person => {
       console.log(`${person.name} ${person.number}`)
     })
     mongoose.connection.close()
   })
+  // eslint-disable-next-line no-undef
 } else if (process.argv.length === 4) {
-  console.log('Please provide a name and number as arguments: node mongo.js <password> <name> <number>')
+  console.log("Please provide a name and number as arguments: node mongo.js <password> <name> <number>")
   mongoose.connection.close()
+  // eslint-disable-next-line no-undef
   process.exit(1)
 }
 else {
+  // eslint-disable-next-line no-undef
   const name = process.argv[3]
+  // eslint-disable-next-line no-undef
   const number = process.argv[4]
   const person = new Person({
     name,
@@ -41,7 +49,7 @@ else {
   })
 
   person.save().then(result => {
-    console.log('person saved!', result)
+    console.log("person saved!", result)
     mongoose.connection.close()
   })
 }
